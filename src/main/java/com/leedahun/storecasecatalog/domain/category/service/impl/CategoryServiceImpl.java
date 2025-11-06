@@ -61,6 +61,6 @@ public class CategoryServiceImpl implements CategoryService {
 
     private Category findCategoryById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("해당 ID의 카테고리를 찾을 수 없습니다. ID: ",  id));
+                .orElseThrow(() -> new EntityNotFoundException("Category",  id));
     }
 }
