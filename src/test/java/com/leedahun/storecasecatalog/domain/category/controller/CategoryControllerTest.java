@@ -63,7 +63,7 @@ class CategoryControllerTest {
                 .willReturn(responseDto);
 
         // when
-        ResultActions actions = mockMvc.perform(post("/api/category")
+        ResultActions actions = mockMvc.perform(post("/api/catalog/category")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestDto)));
 
@@ -90,7 +90,7 @@ class CategoryControllerTest {
         given(categoryService.getAllCategories()).willReturn(list);
 
         // when
-        ResultActions actions = mockMvc.perform(get("/api/category"));
+        ResultActions actions = mockMvc.perform(get("/api/catalog/category"));
 
         // then
         actions.andExpect(status().isOk())
@@ -108,7 +108,7 @@ class CategoryControllerTest {
         given(categoryService.getCategoryById(categoryId)).willReturn(responseDto);
 
         // when
-        ResultActions actions = mockMvc.perform(get("/api/category/{id}", categoryId));
+        ResultActions actions = mockMvc.perform(get("/api/catalog/category/{id}", categoryId));
 
         // then
         actions.andExpect(status().isOk())
@@ -136,7 +136,7 @@ class CategoryControllerTest {
                 .willReturn(updatedResponse);
 
         // when
-        ResultActions actions = mockMvc.perform(put("/api/category/{id}", categoryId)
+        ResultActions actions = mockMvc.perform(put("/api/catalog/category/{id}", categoryId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateRequest)));
 
@@ -156,7 +156,7 @@ class CategoryControllerTest {
         doNothing().when(categoryService).deleteCategory(categoryId);
 
         // when
-        ResultActions actions = mockMvc.perform(delete("/api/category/{id}", categoryId));
+        ResultActions actions = mockMvc.perform(delete("/api/catalog/category/{id}", categoryId));
 
         // then
         actions.andExpect(status().isOk())
