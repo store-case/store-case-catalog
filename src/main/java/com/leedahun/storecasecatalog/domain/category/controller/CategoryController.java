@@ -9,6 +9,7 @@ import com.leedahun.storecasecatalog.common.response.HttpResponse;
 import com.leedahun.storecasecatalog.domain.category.dto.CategoryRequestDto;
 import com.leedahun.storecasecatalog.domain.category.dto.CategoryResponseDto;
 import com.leedahun.storecasecatalog.domain.category.service.CategoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    public ResponseEntity<?> createCategory(@RequestBody CategoryRequestDto requestDto) {
+    public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryRequestDto requestDto) {
         CategoryResponseDto category = categoryService.createCategory(requestDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new HttpResponse(HttpStatus.CREATED, WRITE_SUCCESS.getMessage(), category));
@@ -45,7 +46,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCategory(@PathVariable Long id, @RequestBody CategoryRequestDto requestDto) {
+    public ResponseEntity<?> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequestDto requestDto) {
         CategoryResponseDto category = categoryService.updateCategory(id, requestDto);
         return ResponseEntity.ok()
                 .body(new HttpResponse(HttpStatus.OK, UPDATE_SUCCESS.getMessage(), category));
