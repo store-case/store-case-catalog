@@ -20,7 +20,6 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
 
-    @Transactional
     public CategoryResponseDto createCategory(CategoryRequestDto categoryRequestDto) {
         boolean isCategoryExists = categoryRepository.existsByName(categoryRequestDto.getName());
         if (isCategoryExists) {
@@ -47,7 +46,6 @@ public class CategoryServiceImpl implements CategoryService {
         return new CategoryResponseDto(category);
     }
 
-    @Transactional
     public CategoryResponseDto updateCategory(Long id, CategoryRequestDto categoryRequestDto) {
         Category category = findCategoryById(id);
 
@@ -56,7 +54,6 @@ public class CategoryServiceImpl implements CategoryService {
         return new CategoryResponseDto(category);
     }
 
-    @Transactional
     public void deleteCategory(Long id) {
         Category category = findCategoryById(id);
         categoryRepository.delete(category);
