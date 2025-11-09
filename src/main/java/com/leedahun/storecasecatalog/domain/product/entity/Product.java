@@ -35,7 +35,11 @@ public class Product extends BaseTimeEntity {
 
     private String description;
 
-    private int price;
+    private String optionName;
+
+    private Integer price;
+
+    private Integer stock;
 
     @Builder.Default
     private boolean isDeleted = false;

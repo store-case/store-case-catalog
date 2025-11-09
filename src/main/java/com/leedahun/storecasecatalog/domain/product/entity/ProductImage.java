@@ -37,4 +37,8 @@ public class ProductImage extends BaseTimeEntity {
     @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
 }

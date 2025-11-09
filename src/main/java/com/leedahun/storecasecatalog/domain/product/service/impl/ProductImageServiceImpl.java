@@ -18,6 +18,7 @@ public class ProductImageServiceImpl implements ProductImageService {
     private final S3UploadService s3UploadService;
     private final ProductImageRepository productImageRepository;
 
+    @Override
     public ProductImageUploadResponseDto uploadImage(MultipartFile file) {
         try {
             String s3Key = s3UploadService.uploadFile(file);
