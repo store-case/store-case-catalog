@@ -17,22 +17,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,88 +49,113 @@ class ProductServiceImplTest {
     private ProductImageRepository productImageRepository;
 
     @Mock
-    private RestTemplate restTemplate;
+    private WebClient.Builder webClientBuilder;
 
-    @InjectMocks
+    @Mock
+    private WebClient webClient;
+
+    @Mock
+    private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec requestHeadersSpec;
+
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
+
+    @Mock
+    private Mono<HttpResponse> mono;
+
     private ProductServiceImpl productService;
 
     private Long sellerId;
     private Long storeId;
-    private String expectedApiUrl;
+    private final String EXPECTED_URI_PATH = "/api/internal/identity/users/{sellerId}";
 
     @BeforeEach
     void setUp() {
         sellerId = 1L;
         storeId = 100L;
-        expectedApiUrl = "http://identity-service/api/internal/identity/users/" + sellerId;
+
+        when(webClientBuilder.baseUrl(anyString())).thenReturn(webClientBuilder);
+        when(webClientBuilder.build()).thenReturn(webClient);
+
+        productService = new ProductServiceImpl(
+                productRepository,
+                optionRepository,
+                categoryRepository,
+                productImageRepository,
+                webClientBuilder
+        );
+    }
+
+    private void setupWebClientMocks() {
+        // getStoreId 메서드 내의 WebClient 체인 동작 정의
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(eq(EXPECTED_URI_PATH), eq(sellerId))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(HttpResponse.class)).thenReturn(mono);
     }
 
     @Test
     @DisplayName("getStoreId: 외부 API 호출 성공 시 storeId를 반환한다")
     void getStoreId_Success() {
         // Given
-        // RestTemplate이 반환할 응답(HttpResponse) 생성
+        setupWebClientMocks();
         HttpResponse mockHttpResponse = new HttpResponse(HttpStatus.OK, "Success", storeId);
-
-        // 응답을 ResponseEntity로 래핑
-        ResponseEntity<HttpResponse> mockResponseEntity = new ResponseEntity<>(mockHttpResponse, HttpStatus.OK);
-
-        when(restTemplate.getForEntity(expectedApiUrl, HttpResponse.class)).thenReturn(mockResponseEntity);
+        when(mono.block()).thenReturn(mockHttpResponse);
 
         // When
         Long result = productService.getStoreId(sellerId);
 
         // Then
         assertThat(result).isEqualTo(storeId);
-        verify(restTemplate, times(1)).getForEntity(expectedApiUrl, HttpResponse.class);
+        verify(mono, times(1)).block();
+        verify(requestHeadersUriSpec, times(1)).uri(EXPECTED_URI_PATH, sellerId);
     }
 
     @Test
-    @DisplayName("getStoreId: 외부 API 응답 body가 null이면 EntityNotFoundException을 던진다")
+    @DisplayName("getStoreId: 외부 API 응답 body(HttpResponse)가 null이면 EntityNotFoundException을 던진다")
     void getStoreId_ThrowsEntityNotFound_WhenResponseBodyIsNull() {
         // Given
-        // body가 null인 ResponseEntity를 생성
-        ResponseEntity<HttpResponse> mockResponseEntity = new ResponseEntity<>(null, HttpStatus.OK);
-
-        // restTemplate.getForEntity가 호출되면, 위에서 만든 가짜 응답을 반환하도록 설정
-        when(restTemplate.getForEntity(expectedApiUrl, HttpResponse.class))
-                .thenReturn(mockResponseEntity);
+        setupWebClientMocks();
+        when(mono.block()).thenReturn(null);
 
         // When & Then
         assertThatThrownBy(() -> productService.getStoreId(sellerId))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Seller's StoreId");
 
-        verify(restTemplate, times(1)).getForEntity(expectedApiUrl, HttpResponse.class);
+        verify(mono, times(1)).block();
     }
 
     @Test
-    @DisplayName("getStoreId: 외부 API 응답 data가 null이면 EntityNotFoundException을 던진다")
+    @DisplayName("getStoreId: 외부 API 응답 data(storeId)가 null이면 EntityNotFoundException을 던진다")
     void getStoreId_ThrowsEntityNotFound_WhenResponseDataIsNull() {
         // Given
-        // data 필드가 null인 HttpResponse를 생성
-        HttpResponse mockHttpResponse = new HttpResponse(HttpStatus.OK, "Success", null); // data가 null
-
-        // 가짜 응답을 ResponseEntity로 래핑
-        ResponseEntity<HttpResponse> mockResponseEntity = new ResponseEntity<>(mockHttpResponse, HttpStatus.OK);
-
-        when(restTemplate.getForEntity(expectedApiUrl, HttpResponse.class))
-                .thenReturn(mockResponseEntity);
+        setupWebClientMocks();
+        HttpResponse mockHttpResponse = new HttpResponse(HttpStatus.OK, "Success", null);
+        when(mono.block()).thenReturn(mockHttpResponse);
 
         // When & Then
         assertThatThrownBy(() -> productService.getStoreId(sellerId))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Seller's StoreId");
 
-        verify(restTemplate, times(1)).getForEntity(expectedApiUrl, HttpResponse.class);
+        verify(mono, times(1)).block();
     }
 
     @Test
-    @DisplayName("getStoreId: 외부 API가 400 Bad Request를 반환하면 EntityNotFoundException을 던진다")
+    @DisplayName("getStoreId: 외부 API가 4xx 에러를 반환하면 EntityNotFoundException을 던진다")
     void getStoreId_ThrowsEntityNotFound_OnBadRequest() {
         // Given
-        when(restTemplate.getForEntity(expectedApiUrl, HttpResponse.class))
-                .thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Seller Not Found"));
+        setupWebClientMocks();
+        when(mono.block()).thenThrow(
+                new WebClientResponseException(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Seller Not Found",
+                        null, null, null)
+        );
 
         // When & Then
         assertThatThrownBy(() -> productService.getStoreId(sellerId))
@@ -141,11 +164,11 @@ class ProductServiceImplTest {
     }
 
     @Test
-    @DisplayName("getStoreId: 외부 API 연결 실패 시 ExternalApiException을 던진다")
-    void getStoreId_ThrowsExternalApi_OnRestClientException() {
+    @DisplayName("getStoreId: 외부 API 연결 실패(WebClientException) 시 ExternalApiException을 던진다")
+    void getStoreId_ThrowsExternalApi_OnWebClientException() {
         // Given
-        when(restTemplate.getForEntity(expectedApiUrl, HttpResponse.class))
-                .thenThrow(new RestClientException("Connection refused"));
+        setupWebClientMocks();
+        when(mono.block()).thenThrow(new WebClientException("Connection refused") {});
 
         // When & Then
         assertThatThrownBy(() -> productService.getStoreId(sellerId))
@@ -161,7 +184,6 @@ class ProductServiceImplTest {
         ProductCreateRequestDto requestDto = createMockRequestDto(categoryId, imageIds);
 
         Category mockCategory = Category.builder().id(categoryId).name("Tops").build();
-
         when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(mockCategory));
 
         when(productRepository.save(any(Product.class))).thenAnswer(invocation -> {
@@ -204,7 +226,6 @@ class ProductServiceImplTest {
         Long missingCategoryId = 99L;
         ProductCreateRequestDto requestDto = createMockRequestDto(missingCategoryId, List.of(1L));
 
-        // CategoryRepository가 빈 Optional을 반환하도록 설정
         when(categoryRepository.findById(missingCategoryId)).thenReturn(Optional.empty());
 
         // When & Then
@@ -212,7 +233,6 @@ class ProductServiceImplTest {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Category");
 
-        // 롤백되어야 하므로 다른 Repository들은 전혀 호출되지 않았어야 함
         verify(productRepository, never()).save(any());
         verify(optionRepository, never()).saveAll(any());
         verify(productImageRepository, never()).updateProductIds(any(), any());
