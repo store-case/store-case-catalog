@@ -22,9 +22,9 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<?> createProduct(@RequestHeader("X-User-Id") String userId,
+    public ResponseEntity<?> createProduct(@RequestHeader("X-User-Id") Long userId,
                                            @Valid @RequestBody ProductCreateRequestDto productCreateRequestDto) {
-        Long storeId = productService.getStoreId(Long.parseLong(userId));
+        Long storeId = productService.getStoreId(userId);
         productService.createProduct(productCreateRequestDto, storeId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new HttpResponse(HttpStatus.CREATED, SuccessMessage.WRITE_SUCCESS.getMessage(), null));

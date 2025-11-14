@@ -64,7 +64,7 @@ class ProductServiceImplTest {
     void setUp() {
         sellerId = 1L;
         storeId = 100L;
-        expectedApiUrl = "http://localhost:8081/api/internal/identity/users/" + sellerId;
+        expectedApiUrl = "http://identity-service/api/internal/identity/users/" + sellerId;
     }
 
     @Test
