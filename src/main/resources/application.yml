@@ -13,3 +13,13 @@ jasypt:
   encryptor:
     password: ${jasypt_key}
     bean: jasyptEncryptor
+
+cloud:
+  aws:
+    s3:
+      bucket: store-case
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: ENC(Uq2I5z8tQRvuV2Q6Rsow3YIxGrtt2pe1SxpTIhlyZyY=)
+      secret-key: ENC(uvJsjeuxW0lU8X8yHydgDOXFHP3t1zyDyXvGjG3+c9Z45vpNYmHm/nvnUjf61Xpd0Y5Wy/KpK3I=)

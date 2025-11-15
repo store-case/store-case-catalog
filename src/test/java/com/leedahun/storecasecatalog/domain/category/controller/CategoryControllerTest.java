@@ -45,8 +45,9 @@ class CategoryControllerTest {
 
     @BeforeEach
     void setUp() {
-        requestDto = new CategoryRequestDto();
-        requestDto.setName("테스트 카테고리");
+        requestDto = CategoryRequestDto.builder()
+                .name("테스트 카테고리")
+                .build();
 
         Category category = Category.builder()
                 .id(1L)
@@ -123,8 +124,9 @@ class CategoryControllerTest {
     void updateCategory_success() throws Exception {
         // given
         Long categoryId = 1L;
-        CategoryRequestDto updateRequest = new CategoryRequestDto();
-        updateRequest.setName("수정된 카테고리");
+        CategoryRequestDto updateRequest = CategoryRequestDto.builder()
+                .name("수정된 카테고리")
+                .build();
 
         Category updatedCategory = Category.builder()
                 .id(categoryId)
