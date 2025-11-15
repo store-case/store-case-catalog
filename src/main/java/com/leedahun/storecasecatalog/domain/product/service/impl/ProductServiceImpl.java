@@ -36,7 +36,6 @@ public class ProductServiceImpl implements ProductService {
                               CategoryRepository categoryRepository,
                               ProductImageRepository productImageRepository,
                               @LoadBalanced WebClient.Builder webClientBuilder) {
-
         this.productRepository = productRepository;
         this.optionRepository = optionRepository;
         this.categoryRepository = categoryRepository;
@@ -62,7 +61,7 @@ public class ProductServiceImpl implements ProductService {
                 throw new EntityNotFoundException("Seller's StoreId", sellerId);
             }
 
-            return ((Number) response.getData()).longValue();
+            return (Long) response.getData();
         } catch (WebClientResponseException e) {
             throw new EntityNotFoundException("Seller's StoreId", sellerId);
         } catch (WebClientException e) {
